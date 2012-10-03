@@ -1,0 +1,65 @@
+	<ExportService>
+		<attr name="name" required="yes" default="GlobusExportService">
+			<comment>This field should be unique, at least within its pipeline.</comment>
+		</attr>
+		<attr name="class" required="yes" default="org.rsna.ctp.stdstages.GlobusExportService" editable="no"/>
+		<attr name="root" required="yes" default="test/roots/client/globus-export">
+			<comment>Storage directory for use by the stage for data (must be unique)</comment>
+		</attr>
+		<attr name="destinationRoot" required="yes" default="" editable="yes">
+			<comment>This is the root storage directory of a Server Side import service that would receive the files from a Client GlobusExportService. 
+			This is similar to providing a URL in HttpExportService - the URL pointing to a Server ImportService. With GlobusOnline, we don't need a Server Import Service and will instead use a GCMU pointing to this "destinationRoot"
+			</comment>
+		</attr>
+		<attr name="certfile" required="yes" default="~/.globusonline/lta/ltacert.pem" editable="yes">
+			<comment>This is the user's Cert file that is typically installed with Globus Connect. This x509 cert file should be added to "Manager Identities" on www.globusonline.org</comment>
+		</attr>
+		<attr name="keyfile" required="yes" default="~/.globusonline/lta/ltakey.pem" editable="yes">
+			<comment>Path to the keyfile for the User Cert</comment>
+		</attr>
+		<attr name="cafile" required="yes" default="" editable="yes">
+			<comment>Path to the cacert files. Two valid cacerts are provided with GlobusExportService under cacerts directory</comment>
+		</attr>
+		<attr name="transferWaitTime" required="no" default="" editable="yes">
+			<comment>Time in Minutes for the GlobusExportService to wait for the transfer to complete before giving up</comment>
+		</attr>
+		<attr name="sourceEP" required="yes" default="" editable="yes">
+			<comment>The Client Globus Endpoint, typicall the local Globus Connect</comment>
+		</attr>		
+		<attr name="destinationEP" required="yes" default="" editable="yes">
+			<comment>The destination Globus Endpoint, typically the GCMU on the server side</comment>
+		</attr>
+		<attr name="zip" required="no" default="no" options="yes|no">
+			<comment>Zip data objects before transmission (yes/no)</comment>
+		</attr>
+		<attr name="username" required="yes" default="">
+			<comment>The Globus Online username of the Client (typically for the Globus Connect user)</comment>
+		</attr>
+		<attr name="password" required="no" default="">
+			<comment>The password for authentication, if required by the GO Endpoint</comment>
+		</attr>
+		<attr name="acceptDicomObjects" required="no" default="yes" options="yes|no">
+			<comment>Accept received DicomObjects (yes/no)</comment>
+		</attr>
+		<attr name="acceptXmlObjects" required="no" default="yes" options="yes|no">
+			<comment>Accept received XmlObjects</comment>
+		</attr>
+		<attr name="acceptZipObjects" required="no" default="yes" options="yes|no">
+			<comment>Accept received ZipObjects</comment>
+		</attr>
+		<attr name="acceptFileObjects" required="no" default="yes" options="yes|no">
+			<comment>Accept received FileObjects</comment>
+		</attr>
+		<attr name="dicomScript" required="no" default="">
+			<comment>The script file determining whether DicomObjects are to be accepted for transmission</comment>
+		</attr>
+		<attr name="xmlScript" required="no" default="">
+			<comment>The script file determining whether XmlObjects are to be accepted for transmission</comment>
+		</attr>
+		<attr name="zipScript" required="no" default="">
+			<comment>The script file determining whether ZipObjects are to be accepted for transmission</comment>
+		</attr>
+		<attr name="quarantine" required="no" default="quarantines/GlobusExportService">
+			<comment>Storage directory for quarantined objects</comment>
+		</attr>
+	</ExportService>

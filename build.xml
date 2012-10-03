@@ -1,0 +1,64 @@
+<project name="SFTP" default="all" basedir=".">
+
+	<property name="name" value="GlobusOnline"/>
+
+	<property name="build" value="${basedir}/build"/>
+	<property name="source" value="${basedir}/source"/>
+	<property name="libraries" value="${basedir}/libraries"/>
+	<property name="products" value="${basedir}/products"/>
+	<property name="documentation" value="${basedir}/documentation"/>
+
+	<property name="jarclasspath" value=""/>
+
+	<path id="classpath">
+		<pathelement location="${libraries}/CTP.jar"/>
+		<pathelement location="${libraries}/log4j.jar"/>
+		<pathelement location="${libraries}/TransferAPIClient.jar"/>
+		<pathelement location="${libraries}/bcprov-ext-jdk16-146.jar"/>
+	</path>
+
+	<target name="clean">
+		<delete dir="${build}" failonerror="false"/>
+		<delete dir="${documentation}" failonerror="false"/>
+	</target>
+
+	<target name="init">
+		<mkdir dir="${build}"/>
+		<tstamp>
+			<format property="today" pattern="dd-MMMM-yyyy"/>
+			<format property="now" pattern="HH:mm:ss"/>
+		</tstamp>
+		<echo message="Time now ${now}"/>
+		<echo message="ant.java.version = ${ant.java.version}" />
+		<mkdir dir="${build}"/>
+		<mkdir dir="${products}"/>
+	</target>
+
+	<target name="compile" depends="init">
+		<javac destdir="${build}" optimize="on"
+				classpathref="classpath"
+				debug="true" debuglevel="lines,vars,source">
+			<src path="${source}"/>
+			<!--<compilerarg value="-Xlint:unchecked"/>-->
+		</javac>
+	</target>
+
+	<target name="jar" depends="compile">
+		<jar jarfile="${products}/${name}.jar">
+			<manifest>
+	            		<attribute name="Date" value="${today} at ${now}"/>
+	           		<attribute name="Java-Version" value="${ant.java.version}"/>
+				<attribute name="Class-Path" value="${jarclasspath}"/>
+			</manifest>
+			<fileset dir="${build}" includes="**"/>
+		</jar>
+	</target>
+
+	<target name="javadocs">
+		<mkdir dir="${documentation}"/>
+		<javadoc destdir="${documentation}" sourcefiles="${source}/**" classpathref="classpath"/>
+	</target>
+
+	<target name="all" depends="clean, jar, javadocs"/>
+
+</project>
