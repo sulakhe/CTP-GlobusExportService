@@ -1,6 +1,6 @@
 <project name="SFTP" default="all" basedir=".">
 
-	<property name="name" value="GlobusOnline"/>
+	<property name="name" value="GlobusOnlineExportService"/>
 
 	<property name="build" value="${basedir}/build"/>
 	<property name="source" value="${basedir}/source"/>
