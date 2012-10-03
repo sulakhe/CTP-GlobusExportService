@@ -25,19 +25,19 @@ CTP's config.xml as shown later. User cert can also be obtained by running "mypr
 Installation:
 =============
 
-B. GlobusExportService:
+A. GlobusExportService:
   1. Checkout the CTP-GlobusExportService code from github: https://github.com/sulakhe/CTP-GlobusExportService.git
   2. Run "ant" to build the project that creates a jar file in "products" directory (GlobusOnlineExportService.jar)
 
-A. CTP:
+B. CTP:
   1. Get the CTP code from : https://github.com/johnperry/CTP.git (Lets refer to this as "$CTP")
-  2. Copy the GlobusOnlineExportService.jar from Step: A.2 above to the 'libraries' directory. 
-  3. Copy TransferAPIClient.jar and bcprov-ext-jdk16-146.jar from 'CTP-GlobusExportService/libraries' to the CTP/libraries directory.
-  4. Edit the CTP/source/config/config.xml file and add an Globus Online "ExportService" under the "Client Pipeline".
+  2. Copy the GlobusOnlineExportService.jar from Step: A.2 above to the '<CTP-Source>/libraries' directory. 
+  3. Copy TransferAPIClient.jar and bcprov-ext-jdk16-146.jar from 'CTP-GlobusExportService/libraries' to the <CTP-Source>/libraries directory.
+  4. Edit the <CTP-Source>/source/config/config.xml file and add an Globus Online "ExportService" under the "Client Pipeline".
      An example Globus Online ExportService configuration is also provided at 'CTP-GlobusExportService/source/config/GO-config.xml'.
 
-    \<ExportService
-	      name="Client Globus Transfer Export"
+    <ExportService
+	  name="Client Globus Transfer Export"
           class="org.rsna.ctp.stdstages.GlobusExportService
           root="test/roots/client/globus-export"
           destinationRoot="test/roots/httpserver/https-import"
@@ -50,15 +50,37 @@ A. CTP:
           destinationEP="go#ep1"
           transferWaitTime="5"
           quarantine="test/quarantines/client/globus-export" />
-     
 
+  5. Edit the 'username', 'certfile', 'keyfile', 'cafile', 'sourceEP', 'destinationEP', and 'transferWaitTime' accordingly for the 
+       added Globus Online <ExportService> above.
 
+  6. Edit '<CTP-Source>/source/files/config-editor.xml' and add an entry for the Globus Online Export Service.
+     An example configuration is provided at 'CTP-GlobusExportService/source/config/GO-config-editor.xml'
 
+  7. Build the CTP project by running 'ant all' from the root directory. More details on how to build CTP are available at: 
+     http://mircwiki.rsna.org/index.php?title=Extending_CTP#Building_the_Software
+     It generates 'CTP-installer.jar' in "<CTP-Source>/products/" directory.
 
+  8. Run the CTP Installer: 'java -jar CTP-installer.jar'. It prompts for a location to install CTP.
 
+  9. Installer installs everything in 'CTP' directory. 
 
+  10. Run and Start CTP by running "java -jar Launcher.jar" (GUI Mode) or "java -jar Runner.jar" (Daemon mode).
 
+ 
+Testing:
+======= 
 
+A. Test transferring some XML files using DirectoryImportService:
 
+  1. After CTP is running, you can check the log to verify GlobusExportService is started.    
+  2. Copy any XML file to 'test/roots/client/directory-import/.' 
+  3. This triggers the "Client Pipeline" and you can view the various steps performed by refreshing the Launcher's log (GUI Mode).
+  4. Verify log entries from 'GlobusExportService" in the log.
+  5. Go to www.globusonline.org to track the transfers initiated by the GlobusExportService
+  6. Browse the destination endpoint on www.globusonline.org to see if the XML files were copied to the 'destinationPath' specified
+     in config.xml
 
+B. Test Dicom based transfers using DicomImportService:
+<TO BE ADDED BY Stephen>
 
