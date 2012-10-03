@@ -1,0 +1,64 @@
+CTP-GlobusExportService
+=======================
+Description:
+===========
+Globus Online based Client ExportService for the RSNA Clinical Trial Processor (CTP) Project at: 
+http://mircwiki.rsna.org/index.php?title=CTP-The_RSNA_Clinical_Trial_Processor
+
+This is an extension to the CTP to add GO based export service using an extension jar, so that the ExportService code can be maintained separately outside CTA.
+
+
+Prereqs:
+=======
+
+1. Globus Online account: 
+Register at www.globusonline.org
+
+2. Install Globus Connect (or GCMU): 
+https://www.globusonline.org/globus_connect/
+
+3. X509 User Certificate to authenticate with GO: 
+Globus Connect installation gets X509 user certs and put them typically under \<USER_HOME\>/.globusonline/lta/. 
+There should be two files: (1)ltacert.pem and (2)ltakey.pem These files need to be provided when configuring the 
+CTP's config.xml as shown later. User cert can also be obtained by running "myproxy-logon" that comes with Globus Tookit.
+
+Installation:
+=============
+
+B. GlobusExportService:
+  1. Checkout the CTP-GlobusExportService code from github: https://github.com/sulakhe/CTP-GlobusExportService.git
+  2. Run "ant" to build the project that creates a jar file in "products" directory (GlobusOnlineExportService.jar)
+
+A. CTP:
+  1. Get the CTP code from : https://github.com/johnperry/CTP.git (Lets refer to this as "$CTP")
+  2. Copy the GlobusOnlineExportService.jar from Step: A.2 above to the 'libraries' directory. 
+  3. Copy TransferAPIClient.jar and bcprov-ext-jdk16-146.jar from 'CTP-GlobusExportService/libraries' to the CTP/libraries directory.
+  4. Edit the CTP/source/config/config.xml file and add an Globus Online "ExportService" under the "Client Pipeline".
+     An example Globus Online ExportService configuration is also provided at 'CTP-GlobusExportService/source/config/GO-config.xml'.
+
+    \<ExportService
+	      name="Client Globus Transfer Export"
+          class="org.rsna.ctp.stdstages.GlobusExportService
+          root="test/roots/client/globus-export"
+          destinationRoot="test/roots/httpserver/https-import"
+          username="sulakhe"
+          password=""
+          certfile="/Users/sulakhe/.globusonline/lta/ltacert.pem"
+          keyfile="/Users/sulakhe/.globusonline/lta/ltakey.pem"
+          cafile="/Users/sulakhe/Documents/workspace3/GlobusExportService/cacerts/gd-bundle_ca.cert"
+          sourceEP="sulakhe#my_laptop"
+          destinationEP="go#ep1"
+          transferWaitTime="5"
+          quarantine="test/quarantines/client/globus-export" />
+     
+
+
+
+
+
+
+
+
+
+
+
