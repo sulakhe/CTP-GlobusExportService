@@ -20,7 +20,7 @@ Register at www.globusonline.org
 https://www.globusonline.org/globus_connect/
 
 3. X509 User Certificate to authenticate with GO: 
-Globus Connect installation gets X509 user certs and put them typically under <USER_HOME>/.globusonline/lta/. 
+Globus Connect installation gets X509 user certs and puts them typically under <USER_HOME>/.globusonline/lta/. 
 There should be two files: (1)ltacert.pem and (2)ltakey.pem These files need to be provided when configuring 
 CTP's config.xml as shown later (B.4). User cert can also be obtained by running "myproxy-logon" that comes with Globus Tookit.
 
