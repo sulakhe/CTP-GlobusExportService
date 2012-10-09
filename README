@@ -24,6 +24,11 @@ Globus Connect installation gets X509 user certs and put them typically under <U
 There should be two files: (1)ltacert.pem and (2)ltakey.pem These files need to be provided when configuring 
 CTP's config.xml as shown later (B.4). User cert can also be obtained by running "myproxy-logon" that comes with Globus Tookit.
 
+Based on which OS you are installing on, the location of where settings are installed differ. Find more info at: https://www.globusonline.org/faq/#gc401
+
+4. Copy-Paste the content of your certificate (PEM encoded) public key obtained in step-3 above to www.globusonline.org under "Manage Identities" -> "Add X.509 Certificate".
+
+
 Installation:
 =============
 
@@ -54,7 +59,7 @@ B. CTP:
           quarantine="test/quarantines/client/globus-export" />
 
   5. Edit the 'username', 'certfile', 'keyfile', 'cafile', 'sourceEP', 'destinationEP', and 'transferWaitTime' accordingly for the 
-       added Globus Online <ExportService> above.
+     added Globus Online <ExportService> above. 'destinationRoot' is the directory path, under which you want the files to be transferred.
 
   6. Edit '<CTP-Source>/source/files/config-editor.xml' and add an entry for the Globus Online Export Service.
      An example configuration is provided at 'CTP-GlobusExportService/source/config/GO-config-editor.xml'
