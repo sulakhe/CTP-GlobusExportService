@@ -1,3 +1,9 @@
+<!--
+/*
+ * @author Dina Sulakhe <sulakhe@mcs.anl.gov>
+ * 10/02/2012
+ */
+-->
 <project name="SFTP" default="all" basedir=".">
 
 	<property name="name" value="GlobusOnlineExportService"/>
@@ -7,6 +13,7 @@
 	<property name="libraries" value="${basedir}/libraries"/>
 	<property name="products" value="${basedir}/products"/>
 	<property name="documentation" value="${basedir}/documentation"/>
+	<property name="bin" value="${basedir}/bin"/>
 
 	<property name="jarclasspath" value=""/>
 
@@ -20,6 +27,8 @@
 	<target name="clean">
 		<delete dir="${build}" failonerror="false"/>
 		<delete dir="${documentation}" failonerror="false"/>
+		<delete dir="${products}" failonerror="false"/>
+		<delete dir="${bin}" failonerror="false"/>
 	</target>
 
 	<target name="init">

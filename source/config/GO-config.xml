@@ -1,14 +1,15 @@
 		<ExportService
-		    name="Client Globus Transfer Export"
-		    class="org.rsna.ctp.stdstages.GlobusExportService"
-		    root="test/roots/client/globus-export"
+			name="Client Globus Transfer Export"
+			class="org.rsna.ctp.stdstages.GlobusExportService"
+			root="test/roots/client/globus-export"
 			destinationRoot="test/roots/httpserver/https-import"
 			username="sulakhe"
-			password=""
+			destinationUsername="ep1_user"
+			destinationPassword="dobyns"
 			certfile="/Users/sulakhe/.globusonline/lta/ltacert.pem"
 			keyfile="/Users/sulakhe/.globusonline/lta/ltakey.pem"
 			cafile="/Users/sulakhe/Documents/workspace3/GlobusExportService/cacerts/gd-bundle_ca.cert"
-		    sourceEP="sulakhe#my_laptop"
-		    destinationEP="go#ep1"
+			sourceEP="sulakhe#my_laptop"
+			destinationEP="sulakhe#DobynsLabData"
 			transferWaitTime="5"
-		    quarantine="test/quarantines/client/globus-export" />
+			quarantine="test/quarantines/client/globus-export" />

@@ -1,5 +1,9 @@
 package org.rsna.ctp.stdstages;
 
+/*
+ * @author Dina Sulakhe <sulakhe@mcs.anl.gov>
+ * 10/02/2012
+ */
 import java.io.File;
 
 import org.apache.log4j.Logger;
@@ -13,7 +17,6 @@ import org.w3c.dom.Element;
 public class GlobusExportService extends AbstractExportService{
 
 	static final Logger logger = Logger.getLogger(GlobusExportService.class);
-	//URL url;
 
 	String username = null;
 	String password = null;
@@ -24,6 +27,8 @@ public class GlobusExportService extends AbstractExportService{
 	String urlString = null;
 	String sourceEP = null;
 	String destinationEP = null;
+	String destinationUsername = null;
+	String destinationPassword = null;
 	String destinationRoot = null;
 	int transferWaitTime = 300; //In Seconds
 	
@@ -43,6 +48,8 @@ public class GlobusExportService extends AbstractExportService{
 		sourceEP = element.getAttribute("sourceEP");
 		destinationEP = element.getAttribute("destinationEP");
 		destinationRoot = element.getAttribute("destinationRoot");
+		destinationUsername = element.getAttribute("destinationUsername");
+		destinationPassword = element.getAttribute("destinationPassword");
 		if(!element.getAttribute("transferWaitTime").isEmpty())
 		{
 			transferWaitTime = Integer.parseInt(element.getAttribute("transferWaitTime")) * 60;
@@ -73,11 +80,26 @@ public class GlobusExportService extends AbstractExportService{
 			org.globusonline.transfer.Example e = new Example(client);
 
 			JSONTransferAPIClient.Result r;
-			logger.info("Activating Globus Online Endpoints");
-			if (!e.autoActivate(sourceEP) || !e.autoActivate(destinationEP)) {
-				logger.error("Unable to auto activate GO endpoints");                               
+			logger.info("Auto Activating Globus Online Source Endpoint");
+			if (!e.autoActivate(sourceEP)) {
+				logger.error("Unable to auto activate Source GO endpoint");                               
 				return Status.FAIL;
 			}
+			logger.info("Activating Remote Destination Endpoint");
+			if(destinationUsername == null){
+				logger.info("Destination EP username is null");
+				if (!e.autoActivate(sourceEP)) {
+					logger.error("Unable to auto activate Destination GO endpoint");                               
+					return Status.FAIL;
+				}				
+			}else{
+				if(!e.runPasswordActivation(destinationEP, destinationUsername, destinationPassword)){
+					logger.error("Unable to activate Destination GO endpoint");                               
+					return Status.FAIL;
+					
+				}
+			}
+			
 			logger.info("GO Endpoints Activation was successfull..");
 
 			r = client.getResult("/transfer/submission_id");
@@ -107,7 +129,10 @@ public class GlobusExportService extends AbstractExportService{
 			}
 
 		} catch (Exception e) {
-			logger.error("Got an exception..");
+			logger.error("Got an exception..\n");
+			logger.error(e.getMessage());
+			logger.error(e.getStackTrace().toString());
+			
 			e.printStackTrace();
 			return Status.FAIL;
 		}

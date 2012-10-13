@@ -11,6 +11,14 @@
 			This is similar to providing a URL in HttpExportService - the URL pointing to a Server ImportService. With GlobusOnline, we don't need a Server Import Service and will instead use a GCMU pointing to this "destinationRoot"
 			</comment>
 		</attr>
+		<attr name="destinationUsername" required="yes" default="" editable="yes">
+			<comment>This the username to be used to activate the destination Endpoint
+			</comment>
+		</attr>
+		<attr name="destinationPassword" required="yes" default="" editable="no">
+			<comment>This the password to be used to activate the destination Endpoint
+			</comment>
+		</attr>
 		<attr name="certfile" required="yes" default="~/.globusonline/lta/ltacert.pem" editable="yes">
 			<comment>This is the user's Cert file that is typically installed with Globus Connect. This x509 cert file should be added to "Manager Identities" on www.globusonline.org</comment>
 		</attr>
