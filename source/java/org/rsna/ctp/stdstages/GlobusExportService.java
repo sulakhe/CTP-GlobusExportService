@@ -26,6 +26,8 @@ public class GlobusExportService extends AbstractExportService{
 	String caFile = null;
 	String urlString = null;
 	String sourceEP = null;
+	String sourceUsername = null;
+	String sourcePassword = null;	
 	String destinationEP = null;
 	String destinationUsername = null;
 	String destinationPassword = null;
@@ -46,6 +48,8 @@ public class GlobusExportService extends AbstractExportService{
 		keyFile = element.getAttribute("keyfile");
 		caFile = element.getAttribute("cafile");
 		sourceEP = element.getAttribute("sourceEP");
+		sourceUsername = element.getAttribute("sourceUsername");
+		sourcePassword = element.getAttribute("sourcePassword");		
 		destinationEP = element.getAttribute("destinationEP");
 		destinationRoot = element.getAttribute("destinationRoot");
 		destinationUsername = element.getAttribute("destinationUsername");
@@ -79,16 +83,28 @@ public class GlobusExportService extends AbstractExportService{
 			JSONTransferAPIClient client = new JSONTransferAPIClient(username, caFile, certFile, keyFile);        
 			org.globusonline.transfer.Example e = new Example(client);
 
-			JSONTransferAPIClient.Result r;
-			logger.info("Auto Activating Globus Online Source Endpoint");
-			if (!e.autoActivate(sourceEP)) {
-				logger.error("Unable to auto activate Source GO endpoint");                               
-				return Status.FAIL;
+
+			//Activate source endpoint
+			logger.info("Activating Source Endpoint");
+			if(sourceUsername == null){
+				logger.info("Source EP username and password is null. Attempting Autoactivations without username/passwd.");
+				if (!e.autoActivate(sourceEP)) {
+					logger.error("Unable to auto activate Source GO endpoint");                               
+					return Status.FAIL;
+				}				
+			}else{
+				if(!e.runPasswordActivation(sourceEP, sourceUsername, sourcePassword)){
+					logger.error("Unable to activate Source GO endpoint");                               
+					return Status.FAIL;
+					
+				}
 			}
+			
+			//Activate destination endpoint
 			logger.info("Activating Remote Destination Endpoint");
 			if(destinationUsername == null){
-				logger.info("Destination EP username is null");
-				if (!e.autoActivate(sourceEP)) {
+				logger.info("Destination EP username and password is null. Attempting Autoactivations without username/passwd.");
+				if (!e.autoActivate(destinationEP)) {
 					logger.error("Unable to auto activate Destination GO endpoint");                               
 					return Status.FAIL;
 				}				
@@ -102,7 +118,7 @@ public class GlobusExportService extends AbstractExportService{
 			
 			logger.info("GO Endpoints Activation was successfull..");
 
-			r = client.getResult("/transfer/submission_id");
+			JSONTransferAPIClient.Result r = client.getResult("/transfer/submission_id");
 			String submissionId = r.document.getString("value");
 
 			JSONObject transfer = new JSONObject();
