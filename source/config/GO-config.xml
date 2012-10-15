@@ -5,7 +5,7 @@
 			destinationRoot="test/roots/httpserver/https-import"
 			username="sulakhe"
 			destinationUsername="ep1_user"
-			destinationPassword="dobyns"
+			destinationPassword=""
 			certfile="/Users/sulakhe/.globusonline/lta/ltacert.pem"
 			keyfile="/Users/sulakhe/.globusonline/lta/ltakey.pem"
 			cafile="/Users/sulakhe/Documents/workspace3/GlobusExportService/cacerts/gd-bundle_ca.cert"
