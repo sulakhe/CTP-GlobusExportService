@@ -86,7 +86,7 @@ public class GlobusExportService extends AbstractExportService{
 
 			//Activate source endpoint
 			logger.info("Activating Source Endpoint");
-			if(sourceUsername == null){
+			if(sourceUsername == null || sourceUsername == ""){
 				logger.info("Source EP username and password is null. Attempting Autoactivations without username/passwd.");
 				if (!e.autoActivate(sourceEP)) {
 					logger.error("Unable to auto activate Source GO endpoint");                               
@@ -102,7 +102,7 @@ public class GlobusExportService extends AbstractExportService{
 			
 			//Activate destination endpoint
 			logger.info("Activating Remote Destination Endpoint");
-			if(destinationUsername == null){
+			if(destinationUsername == null || destinationUsername == ""){
 				logger.info("Destination EP username and password is null. Attempting Autoactivations without username/passwd.");
 				if (!e.autoActivate(destinationEP)) {
 					logger.error("Unable to auto activate Destination GO endpoint");                               
