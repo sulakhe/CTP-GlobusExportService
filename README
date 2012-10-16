@@ -89,5 +89,55 @@ A. Test transferring some XML files using DirectoryImportService:
      in config.xml
 
 B. Test Dicom based transfers using DicomImportService:
-<TO BE ADDED BY Stephen>
 
+  1. Macintosh OS X test
+  
+    a. Download & Install Osirix 32-bit Client application: 
+       1. Download the Osirix Application from here: http://www.osirix-viewer.com/ContributionOsiriX.html
+       2. If you're OS X version is less than 10.7, there are older versions of Osirix here: http://www.osirix-viewer.com/OldVersions.html
+          
+    b. Open Osirix and go to the Locations settings, to set up the CTP Dicom Import Connection
+       1. Under the Osirix Menu, go the Preferences option (command-comma is a keyboard shortcut to this)
+       2. Within Osirix Preferences, click on the Locations icon, under Sharing
+       3. The top section of the screen that appears reads "DICOM Nodes for DICOM Query/Retieve and DICOM Send".  Click the "Add new node" button underneath the list box, on the right-hand side.
+       4. The new line that appears will have the following (abbreviated for headings of importance):
+          AETitle	Port 	Q&R		Description
+          =======	======	=======	===========	
+          PACS		11112	checked	Description
+       5. Click on the word "PACS" in the AETitle and change it to "CTP"
+       6. Click on the number "11112" in the Port and change it to "1104"
+       7. Click on the checkbox under Q&R, to uncheck it
+       8. Click on the word "Description" under Description and change it to "CTP client to send DICOM files to"
+       9. After these changes, the line should read (abbreviated for headings of importance):
+       	  AETitle	Port 	Q&R			Description
+          =======	======	=======		===========	
+          CTP		1104	unchecked	CTP client to send DICOM files to
+       10. Close the Locations window in Osirix and quit Osirix.
+       
+    c. Obtain publicly available DICOM files to test with
+       1. Download any of the file sets available on this website: http://www.osirix-viewer.com/datasets/
+       2. Open Osirix back up
+       3. Click the "Import" button on the top of the screen
+       4. Browse to the directory where the zip is, select it and click "Open"
+       5. Osirix will decompress the zip. Osirix will prompt you, asking whether to delete the zip.  Click "Cancel" to save the zip.
+       6. Osirix will then prompt you about linking to the files or putting them in the local database.  Click "Copy Files" to put them in the database.
+       
+    d. Now that you have the files ready, you will need to confirm that the port you set in Osirix is correct.
+       1. After CTP is running, you can check configuration under the Configuration Tab.
+       2. The first "ImportService" should be the "Client DICOM Import"
+       3. After clicking the first "ImportService," the pane to the right should populate
+       4. Scroll down to the entry for "port" and confirm that it is set to "1104"
+       5. If it isn't go back to step b above and change the port in Osirix for the "CTP" AETitle.
+       
+    e. With both Osirix and CTP running and all the settings matching, you should be able to transfer DICOM files.
+       1. Go back to Osirix and expand the dataset you see displayed in the window.
+       2. Click one of the lines below that, to select the data to send.
+       3. Click the "Send" icon at the top of the screen.
+       4. In the prompt that appears, select "CTP - CTP Client to send DICOM files to" from the first drop down.
+       5. Click the "Send" button and your files should be dispatched.
+       6. This triggers the "Client Pipeline" and you can view the various steps performed by refreshing the Launcher's log (GUI Mode).
+       7. Verify log entries from 'GlobusExportService" in the log.
+       8. Go to www.globusonline.org to track the transfers initiated by the GlobusExportService
+       9. Browse the destination endpoint on www.globusonline.org to see if the XML files were copied to the 'destinationPath' specified
+          in config.xml
+          
