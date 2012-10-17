@@ -11,5 +11,5 @@
 			cafile="/Users/sulakhe/Documents/workspace3/GlobusExportService/cacerts/gd-bundle_ca.cert"
 			sourceEP="sulakhe#my_laptop"
 			destinationEP="sulakhe#DobynsLabData"
-			transferWaitTime="5"
+			transferWaitTime="60"
 			quarantine="test/quarantines/client/globus-export" />
