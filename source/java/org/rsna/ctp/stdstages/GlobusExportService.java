@@ -32,7 +32,7 @@ public class GlobusExportService extends AbstractExportService{
 	String destinationUsername = null;
 	String destinationPassword = null;
 	String destinationRoot = null;
-	int transferWaitTime = 300; //In Seconds
+	int transferWaitTime = 3600; //In Seconds
 	
 
 
