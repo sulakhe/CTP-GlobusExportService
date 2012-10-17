@@ -139,7 +139,7 @@ public class GlobusExportService extends AbstractExportService{
 			
 			logger.info("Initiating Globus Online Transfer..");
 			logger.info("Waiting " + (transferWaitTime/60) + " minutes for the Globus Transfer to complete");
-			if (!e.waitForTask(taskId, 120)) {
+			if (!e.waitForTask(taskId, transferWaitTime)) {
 				logger.info("Transfer not complete after " + (transferWaitTime/60) + " minutes, exiting!!");
 				return Status.FAIL;
 			}
