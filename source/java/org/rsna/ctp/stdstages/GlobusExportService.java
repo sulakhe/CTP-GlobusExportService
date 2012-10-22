@@ -117,6 +117,21 @@ public class GlobusExportService extends AbstractExportService{
 			}
 			
 			logger.info("GO Endpoints Activation was successfull..");
+			
+			
+			//Check if the OS is Windows and translate the Path to GO Compliant 
+			
+			String os = System.getProperty("os.name").toLowerCase();
+			String sPath = file.getAbsolutePath();
+
+			if(os.indexOf("win")>= 0){
+				sPath = sPath.replace(":", "");
+				sPath = sPath.replace("\\", "/");
+				sPath = "/" + sPath;				
+			}
+			logger.info("File to be transferred: " + sPath);
+
+			
 
 			JSONTransferAPIClient.Result r = client.getResult("/transfer/submission_id");
 			String submissionId = r.document.getString("value");
@@ -128,7 +143,7 @@ public class GlobusExportService extends AbstractExportService{
 			JSONObject item = new JSONObject();
 			item.put("DATA_TYPE", "transfer_item");
 			item.put("source_endpoint", sourceEP);
-			item.put("source_path", file.getAbsolutePath());
+			item.put("source_path", sPath);
 			item.put("destination_endpoint", destinationEP);
 			item.put("destination_path", destinationRoot + file.getName());
 			transfer.append("DATA", item);
