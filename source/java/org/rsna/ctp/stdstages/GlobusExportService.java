@@ -5,6 +5,8 @@ package org.rsna.ctp.stdstages;
  * 10/02/2012
  */
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.globusonline.transfer.Example;
@@ -123,11 +125,30 @@ public class GlobusExportService extends AbstractExportService{
 			
 			String os = System.getProperty("os.name").toLowerCase();
 			String sPath = file.getAbsolutePath();
-
+	
 			if(os.indexOf("win")>= 0){
-				sPath = sPath.replace(":", "");
-				sPath = sPath.replace("\\", "/");
-				sPath = "/" + sPath;				
+				
+				//Preparing the source path by removing : on Windows. 
+				String[] sPathSplit = sPath.split(":");
+				sPath = "/"+ sPathSplit[0].toLowerCase() + sPathSplit[1].replace("\\","/");
+				
+				//Check if this source path is accessible on GO, if not assume it is cygdrive
+				// version of the GC and append /cygdrive to path.
+				// The rest of the code in this if-loop should be deleted once GC bug is fixed.
+				
+				Map<String, String> pathMap = new HashMap();				
+				String[] parentDirSplit = file.getAbsoluteFile().getParent().split(":");
+				String parentDir = "/" + parentDirSplit[0].toLowerCase() + parentDirSplit[1].replace("\\", "/");
+				pathMap.put("path", parentDir);								
+				JSONTransferAPIClient.Result listing = client.requestDirListing("GET", "/endpoint/" 
+						+ (sourceEP.contains("#") ? sourceEP.split("#")[1] : sourceEP)+ "/ls", pathMap);
+				
+				
+				if(listing.statusCode == 400){
+					logger.info("It might be an older version of GC, Trying cygdrive based configuration..");
+					sPath = "/cygdrive" + sPath;
+				}
+				
 			}
 			logger.info("File to be transferred: " + sPath);
 
