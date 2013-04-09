@@ -56,6 +56,7 @@ B. CTP:
           sourceEP="sulakhe#my_laptop"
           destinationEP="go#ep1"
           transferWaitTime="5"
+          maxPoolSize="20"
           quarantine="test/quarantines/client/globus-export" />
 
   5. Edit the 'username', 'certfile', 'keyfile', 'cafile', 'sourceEP', 'destinationEP', and 'transferWaitTime' accordingly for the 
