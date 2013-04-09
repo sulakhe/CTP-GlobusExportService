@@ -12,4 +12,5 @@
 			sourceEP="sulakhe#my_laptop"
 			destinationEP="sulakhe#DobynsLabData"
 			transferWaitTime="60"
+			maxPoolSize="100"
 			quarantine="test/quarantines/client/globus-export" />
