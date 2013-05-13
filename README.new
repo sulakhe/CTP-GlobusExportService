@@ -1,0 +1,190 @@
+CTP-GlobusExportService
+=======================
+Author: sulakhe@mcs.anl.gov (Dina Sulakhe)
+Beta-tester: sgranite@jhu.edu (Stephen Granite)
+
+Description:
+===========
+Globus Online based Client ExportService for the RSNA Clinical Trial Processor (CTP) Project at: 
+http://mircwiki.rsna.org/index.php?title=CTP-The_RSNA_Clinical_Trial_Processor
+
+This is an extension to the CTP to add GO based export service using an extension jar, so that the ExportService code can be maintained separately outside CTA.
+
+
+Prereqs:
+=======
+
+1. Globus Online account: 
+Register at www.globusonline.org
+
+2. Install Globus Connect (or GCMU): 
+https://www.globusonline.org/globus_connect/
+
+3. X509 User Certificate to authenticate with GO: 
+Globus Connect installation gets X509 user certs and puts them typically under <USER_HOME>/.globusonline/lta/. 
+There should be two files: (1)ltacert.pem and (2)ltakey.pem These files need to be provided when configuring 
+CTP's config.xml as shown later (B.4). User cert can also be obtained by running "myproxy-logon" that comes with Globus Tookit.
+
+Based on which OS you are installing on, the location of where settings are installed differ. Find more info at: https://www.globusonline.org/faq/#gc401
+
+4. Copy-Paste the content of your certificate (PEM encoded) public key obtained in step-3 above to www.globusonline.org under "Manage Identities" -> "Add X.509 Certificate".
+
+
+Installation:
+=============
+
+A. GlobusExportService:
+  1. Checkout the CTP-GlobusExportService code from github: https://github.com/sulakhe/CTP-GlobusExportService.git
+  2. Run "ant" to build the project that creates a jar file in "products" directory (GlobusOnlineExportService.jar)
+
+B. CTP:
+  1. Get the CTP code from : https://github.com/johnperry/CTP.git (Lets refer to this as "$CTP")
+  2. Copy the GlobusOnlineExportService.jar from Step: A.2 above to the '<CTP-Source>/libraries' directory. 
+  3. Copy TransferAPIClient.jar and bcprov-ext-jdk16-146.jar from 'CTP-GlobusExportService/libraries' to the <CTP-Source>/libraries directory.
+  4. Edit the <CTP-Source>/source/config/config.xml file and add an Globus Online "ExportService" under the "Client Pipeline".
+     An example Globus Online ExportService configuration is also provided at 'CTP-GlobusExportService/source/config/GO-config.xml'.
+
+    <ExportService
+	  name="Client Globus Transfer Export"
+          class="org.rsna.ctp.stdstages.GlobusExportService
+          root="test/roots/client/globus-export"
+          destinationRoot="test/roots/httpserver/https-import"
+          username="sulakhe"
+          password=""
+          certfile="/Users/sulakhe/.globusonline/lta/ltacert.pem"
+          keyfile="/Users/sulakhe/.globusonline/lta/ltakey.pem"
+          cafile="/Users/sulakhe/Documents/workspace3/GlobusExportService/cacerts/gd-bundle_ca.cert"
+          sourceEP="sulakhe#my_laptop"
+          destinationEP="go#ep1"
+          transferWaitTime="5"
+          quarantine="test/quarantines/client/globus-export" />
+
+  5. Edit the 'username', 'certfile', 'keyfile', 'cafile', 'sourceEP', 'destinationEP', and 'transferWaitTime' accordingly for the 
+     added Globus Online <ExportService> above. 'destinationRoot' is the directory path, under which you want the files to be transferred.
+
+  6. Edit '<CTP-Source>/source/files/config-editor.xml' and add an entry for the Globus Online Export Service.
+     An example configuration is provided at 'CTP-GlobusExportService/source/config/GO-config-editor.xml'
+
+  7. Build the CTP project by running 'ant all' from the root directory. More details on how to build CTP are available at: 
+     http://mircwiki.rsna.org/index.php?title=Extending_CTP#Building_the_Software
+     It generates 'CTP-installer.jar' in "<CTP-Source>/products/" directory.
+
+  8. Run the CTP Installer: 'java -jar CTP-installer.jar'. It prompts for a location to install CTP.
+
+  9. Installer installs everything in 'CTP' directory. 
+
+  10. Run and Start CTP by running "java -jar Launcher.jar" (GUI Mode) or "java -jar Runner.jar" (Daemon mode).
+
+ 
+Testing:
+======= 
+
+A. Test transferring some XML files using DirectoryImportService:
+
+  1. After CTP is running, you can check the log to verify GlobusExportService is started.    
+  2. Copy any XML file to 'test/roots/client/directory-import/.' 
+  3. This triggers the "Client Pipeline" and you can view the various steps performed by refreshing the Launcher's log (GUI Mode).
+  4. Verify log entries from 'GlobusExportService" in the log.
+  5. Go to www.globusonline.org to track the transfers initiated by the GlobusExportService
+  6. Browse the destination endpoint on www.globusonline.org to see if the XML files were copied to the 'destinationPath' specified
+     in config.xml
+
+B. Test Dicom based transfers using DicomImportService:
+
+  1. Macintosh OS X 10.6+ test
+  
+    a. Download & Install Osirix 32-bit Client application: 
+       1. Download the Osirix Application from here: http://www.osirix-viewer.com/ContributionOsiriX.html
+       2. If you're OS X version is less than 10.7, there are older versions of Osirix here: http://www.osirix-viewer.com/OldVersions.html
+          
+    b. Open Osirix and go to the Locations settings, to set up the CTP Dicom Import Connection
+       1. Under the Osirix Menu, go the Preferences option (command-comma is a keyboard shortcut to this)
+       2. Within Osirix Preferences, click on the Locations icon, under Sharing
+       3. The top section of the screen that appears reads "DICOM Nodes for DICOM Query/Retieve and DICOM Send".  Click the "Add new node" button underneath the list box, on the right-hand side.
+       4. The new line that appears will have the following (abbreviated for headings of importance):
+          AETitle	Port 	Q&R		Description
+          =======	======	=======	===========	
+          PACS		11112	checked	Description
+       5. Click on the word "PACS" in the AETitle and change it to "CTP"
+       6. Click on the number "11112" in the Port and change it to "1104"
+       7. Click on the checkbox under Q&R, to uncheck it
+       8. Click on the word "Description" under Description and change it to "CTP client to send DICOM files to"
+       9. After these changes, the line should read (abbreviated for headings of importance):
+       	  AETitle	Port 	Q&R			Description
+          =======	======	=======		===========	
+          CTP		1104	unchecked	CTP client to send DICOM files to
+       10. Close the Locations window in Osirix and quit Osirix.
+       
+    c. Obtain publicly available DICOM files to test with
+       1. Download any of the file sets available on this website: http://www.osirix-viewer.com/datasets/
+       2. Open Osirix back up
+       3. Click the "Import" button on the top of the screen
+       4. Browse to the directory where the zip is, select it and click "Open"
+       5. Osirix will decompress the zip. Osirix will prompt you, asking whether to delete the zip.  Click "Cancel" to save the zip.
+       6. Osirix will then prompt you about linking to the files or putting them in the local database.  Click "Copy Files" to put them in the database.
+       
+    d. Now that you have the files ready, you will need to confirm that the port you set in Osirix is correct.
+       1. After CTP is running, you can check configuration under the Configuration Tab.
+       2. The first "ImportService" should be the "Client DICOM Import"
+       3. After clicking the first "ImportService," the pane to the right should populate
+       4. Scroll down to the entry for "port" and confirm that it is set to "1104"
+       5. If it isn't go back to step b above and change the port in Osirix for the "CTP" AETitle.
+       
+    e. With both Osirix and CTP running and all the settings matching, you should be able to transfer DICOM files.
+       1. Go back to Osirix and expand the dataset you see displayed in the window.
+       2. Click one of the lines below that, to select the data to send.
+       3. Click the "Send" icon at the top of the screen.
+       4. In the prompt that appears, select "CTP - CTP Client to send DICOM files to" from the first drop down.
+       5. Click the "Send" button and your files should be dispatched.
+       6. This triggers the "Client Pipeline" and you can view the various steps performed by refreshing the Launcher's log (GUI Mode).
+       7. Verify log entries from 'GlobusExportService" in the log.
+       8. Go to www.globusonline.org to track the transfers initiated by the GlobusExportService
+       9. Browse the destination endpoint on www.globusonline.org to see if the DCM files were copied to the 'destinationPath' specified
+          in config.xml
+		  
+2. Windows XP 32-bit test
+  
+    a. Download & Install K-PACS 32-bit Client application: 
+       1. Download the K-PACS Application from here: http://www.k-pacs.net/
+	   
+    b. Open K-PACS and go to the DICOM settings, to set up the CTP Dicom Import Connection
+	   1. Upon opening K-PACS, you will be prompted with a message regarding use of the tool for medical purposes.  Click the "Accept" button.
+       2. To open the DICOM settings, click on the networked computer icon in the upper right-hand corner of the screen
+       3. Within DICOM configuration, enter the items below in the appropriate text fields:
+	      a. Logical Name: CTP
+		  b. DICOM AE title: CTP
+		  c. IP address: 127.0.0.1
+		  d. Port number: 1104
+       4. Upon entry of all the fields, click the "Add" button.
+	   5. If you have CTP open and running in the background, click the word "ECHO" on the line that was added for CTP.  A prompt box will appear with "Success" if CTP is running and the settings are correct.
+	   6. Click the "Save" button, to close the DICOM configuration window.
+	   7. Close K-PACS (because it is not very good at refreshing the Filesystem contents).
+	          
+    c. Obtain publicly available DICOM files to test with
+       1. Download any of the file sets available on this website: http://www.osirix-viewer.com/datasets/
+	   2. Decompress the zip archive, so that its contents are in a folder on your file system.
+       3. Open K-PACS back up.
+       4. Click the "Filesystem" tab under "Query" in the upper right-hand corner of the screen.
+       5. Browse to the directory where the decompressed zip's folder is, select it and click the "Accept" button
+       6. Click the checkbox(es) next to the data you have loaded and click the "Viewer" icon on the left-hand side of the screen.  This will load the data into the local K-PACS database, so you can transfer it out.
+       7. Close the viewer screen that appears.
+	   8. Click on the "Database" Tab under "Query" to confirm that the data are in the local database.
+       
+    d. Now that you have the files ready, you will need to confirm that the port you set in Osirix is correct.
+       1. After CTP is running, you can check configuration under the Configuration Tab.
+       2. The first "ImportService" should be the "Client DICOM Import"
+       3. After clicking the first "ImportService," the pane to the right should populate
+       4. Scroll down to the entry for "port" and confirm that it is set to "1104"
+       5. If it isn't go back to step b above and change the port in K-PACS for the "CTP" AETitle.
+       
+    e. With both K-PACS and CTP running and all the settings matching, you should be able to transfer DICOM files.
+       1. Go back to K-PACS and expand the dataset you see displayed in the "Database" window.
+       2. Click one of the lines below that, to select the data to send.
+       3. Click the "Transfer" icon on the left-hand side of the screen.
+       4. In the prompt that appears, select "CTP".
+       5. Click the "Send" button and your files should be dispatched.
+       6. This triggers the "Client Pipeline" and you can view the various steps performed by refreshing the Launcher's log (GUI Mode).
+       7. Verify log entries from 'GlobusExportService" in the log.
+       8. Go to www.globusonline.org to track the transfers initiated by the GlobusExportService
+       9. Browse the destination endpoint on www.globusonline.org to see if the DCM files were copied to the 'destinationPath' specified
+          in config.xml
