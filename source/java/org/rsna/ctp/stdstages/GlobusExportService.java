@@ -43,7 +43,7 @@ public class GlobusExportService extends AbstractExportService{
 	String destinationRoot = null;
 	int transferWaitTime = 3600; //In Seconds
 	int filesPerTransfer = 100;
-	int poolSize = 1;
+	int numberOfThreads = 1;
 	
 	Exporter[] exporters = null;
 	Exporter exporter = null;
@@ -56,9 +56,6 @@ public class GlobusExportService extends AbstractExportService{
 	static final int defaultInterval = 5000;
 	static final int minInterval = 1000;
 	static final int maxInterval = 2 * defaultInterval;
-
-	static final int minPoolSize = 1;
-	static final int maxPoolSize = 10;
 
 	int interval = defaultInterval;
 	
@@ -89,7 +86,7 @@ public class GlobusExportService extends AbstractExportService{
 		}
 		if(!element.getAttribute("numberOfThreads").isEmpty())
 		{
-			poolSize = Integer.parseInt(element.getAttribute("numberOfThreads"));
+			numberOfThreads = Integer.parseInt(element.getAttribute("numberOfThreads"));
 		}
 		
 
@@ -101,11 +98,11 @@ public class GlobusExportService extends AbstractExportService{
 	 * Start the export thread.
 	 */
 	public void start() {
-		int queueSize = poolSize;
-		logger.info("Queue Size: " + queueSize);
-		exporters = new Exporter[queueSize];
+		//int queueSize = numberOfThreads;
+		logger.info("Queue Size: " + numberOfThreads);
+		exporters = new Exporter[numberOfThreads];
 		
-		for(int i=0; i<queueSize; i++){
+		for(int i=0; i<numberOfThreads; i++){
 			exporters[i] = new Exporter();
 			exporters[i].start();
 			logger.info("Thread " + i + " started..");

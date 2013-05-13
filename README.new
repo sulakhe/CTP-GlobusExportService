@@ -45,22 +45,26 @@ B. CTP:
      An example Globus Online ExportService configuration is also provided at 'CTP-GlobusExportService/source/config/GO-config.xml'.
 
     <ExportService
-	  name="Client Globus Transfer Export"
-          class="org.rsna.ctp.stdstages.GlobusExportService
-          root="test/roots/client/globus-export"
-          destinationRoot="test/roots/httpserver/https-import"
-          username="sulakhe"
-          password=""
-          certfile="/Users/sulakhe/.globusonline/lta/ltacert.pem"
-          keyfile="/Users/sulakhe/.globusonline/lta/ltakey.pem"
-          cafile="/Users/sulakhe/Documents/workspace3/GlobusExportService/cacerts/gd-bundle_ca.cert"
-          sourceEP="sulakhe#my_laptop"
-          destinationEP="go#ep1"
-          transferWaitTime="5"
-          quarantine="test/quarantines/client/globus-export" />
+		name="Client Globus Transfer Export"
+		class="org.rsna.ctp.stdstages.GlobusExportService"
+		root="test/roots/client/globus-export"
+		destinationRoot="test/roots/httpserver/https-import"
+		username="sulakhe"
+		certfile="/Users/sulakhe/.globusonline/lta/ltacert.pem"
+		keyfile="/Users/sulakhe/.globusonline/lta/ltakey.pem"
+		cafile="/Users/sulakhe/Documents/workspace3/GlobusExportService/cacerts/gd-bundle_ca.cert"
+		sourceEP="sulakhe#my_laptop"
+		destinationEP="sulakhe#DobynsLabData"
+		destinationUsername="ep1_user"
+		destinationPassword=""
+		transferWaitTime="60"
+		filesPerTransfer="100"
+		numberOfThreads="1"
+		quarantine="test/quarantines/client/globus-export" />
 
-  5. Edit the 'username', 'certfile', 'keyfile', 'cafile', 'sourceEP', 'destinationEP', and 'transferWaitTime' accordingly for the 
-     added Globus Online <ExportService> above. 'destinationRoot' is the directory path, under which you want the files to be transferred.
+
+  5. Edit the 'username', 'certfile', 'keyfile', 'cafile', 'sourceEP', 'destinationEP', 'sourceUsername','sourcePassword','destinationUsername','destinationPassword', and 'transferWaitTime' 
+  	 accordingly for the added Globus Online <ExportService> above. 'destinationRoot' is the directory path, under which you want the files to be transferred.
 
   6. Edit '<CTP-Source>/source/files/config-editor.xml' and add an entry for the Globus Online Export Service.
      An example configuration is provided at 'CTP-GlobusExportService/source/config/GO-config-editor.xml'

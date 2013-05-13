@@ -43,6 +43,10 @@
 		<attr name="transferWaitTime" required="no" default="" editable="yes">
 			<comment>Time in Minutes for the GlobusExportService to wait for the transfer to complete before giving up</comment>
 		</attr>
+		<attr name="numberOfThreads" required="no" default="1" editable="yes">
+			<comment>By default, most of the ExportServices have only one thread that handle all the transfers. GlobusExportService provides an option to create multiple threads that can get files from the queue and transfers groups of files. 
+			This is an advanced feature, and should be only changed (to >1) if you think that would help utilize the bandwidth better (or if you know what you are doing).</comment>
+		</attr>
 		<attr name="filesPerTransfer" required="yes" default="100" editable="yes">
 			<comment>Total number of files to be grouped within each transfer. Globus Online allows us to group the files into one transfer.</comment>
 		</attr>
