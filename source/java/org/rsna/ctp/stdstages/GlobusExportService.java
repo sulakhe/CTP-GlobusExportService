@@ -5,12 +5,19 @@ package org.rsna.ctp.stdstages;
  * 10/02/2012
  */
 import java.io.File;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.globusonline.transfer.APIError;
 import org.globusonline.transfer.Example;
 import org.globusonline.transfer.JSONTransferAPIClient;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.rsna.ctp.pipeline.AbstractExportService;
 import org.rsna.ctp.pipeline.Status;
@@ -35,9 +42,12 @@ public class GlobusExportService extends AbstractExportService{
 	String destinationPassword = null;
 	String destinationRoot = null;
 	int transferWaitTime = 3600; //In Seconds
+	int filesPerTransfer = 100;
 	int poolSize = 1;
 	
 	Exporter[] exporters = null;
+	Exporter exporter = null;
+
 	int successCount = 0;
 	int retryCount = 0;
 
@@ -51,8 +61,7 @@ public class GlobusExportService extends AbstractExportService{
 	static final int maxPoolSize = 10;
 
 	int interval = defaultInterval;
-
-
+	
 
 	public GlobusExportService(Element element) throws Exception {
 		super(element);
@@ -72,12 +81,17 @@ public class GlobusExportService extends AbstractExportService{
 		destinationRoot = element.getAttribute("destinationRoot");
 		destinationUsername = element.getAttribute("destinationUsername");
 		destinationPassword = element.getAttribute("destinationPassword");
-		poolSize = Integer.parseInt(element.getAttribute("maxPoolSize"));
+		filesPerTransfer = Integer.parseInt(element.getAttribute("filesPerTransfer"));
 		
 		if(!element.getAttribute("transferWaitTime").isEmpty())
 		{
 			transferWaitTime = Integer.parseInt(element.getAttribute("transferWaitTime")) * 60;
 		}
+		if(!element.getAttribute("numberOfThreads").isEmpty())
+		{
+			poolSize = Integer.parseInt(element.getAttribute("numberOfThreads"));
+		}
+		
 
 		/**/logger.info(name + " started");
 
@@ -98,114 +112,155 @@ public class GlobusExportService extends AbstractExportService{
 		}
 		
 		//startExportThread();
+	/*	exporter = new Exporter();
+		exporter.start();
+	*/	
+		
 	}
 
+	private Status activateEP(String EpUsername, String EpPassword, String endpoint){
+		
+		logger.info("Activating Endpoint: " + endpoint);
+		try {
+			JSONTransferAPIClient client = new JSONTransferAPIClient(username, caFile, certFile, keyFile);        
+			org.globusonline.transfer.Example GOClient = new Example(client);
+
+			if(EpUsername == null || EpUsername == ""){
+				logger.info("EP username and password is null. Attempting Autoactivations without username/passwd.");
+				if (!GOClient.autoActivate(endpoint)) {
+					logger.error("Unable to auto activate GO endpoint : " + endpoint);                               
+					return Status.FAIL;
+				}
+			}else{
+				if(!GOClient.runPasswordActivation(endpoint, EpUsername, EpPassword )){
+					logger.error("Unable to activate GO endpoint : " + endpoint);                               
+					return Status.FAIL;					
+				}
+			}
+			return Status.OK;
+
+		} catch (IOException e) {
+			logger.error("Got an IO exception..\n");
+			logger.error(e.getMessage());
+			logger.error(e.getStackTrace().toString());
+
+			e.printStackTrace();
+			return Status.FAIL;
+		} catch (JSONException e) {
+			logger.error("Got an JSON exception..\n");
+			logger.error(e.getMessage());
+			logger.error(e.getStackTrace().toString());
+			e.printStackTrace();
+			return Status.FAIL;
+		} catch (GeneralSecurityException e) {
+			logger.error("Got an Security exception..\n");
+			logger.error(e.getMessage());
+			logger.error(e.getStackTrace().toString());
+			e.printStackTrace();
+			return Status.FAIL;
+		} catch (APIError e) {
+			logger.error("Got an APIError exception..\n");
+			logger.error(e.getMessage());
+			logger.error(e.getStackTrace().toString());
+			e.printStackTrace();
+			return Status.FAIL;
+		}				
+
+	}
+	
 	@Override
 	public Status export(File file) {
+		return null;
+	}
+	
+	
+	public Status export(List<File> files) {
 
 		//logger.info("1. Inside " + name +"export methods..");
 		try {
-			//logger.info("2. Inside " + name +"export methods TRY..");	
-			//logger.info(username + " : " + caFile + " : " + certFile + " : " + keyFile + " : " + file.getAbsolutePath() + " : " + file.getName() + "\n" );
-			//logger.info("WaitTime: " + transferWaitTime);
-			
 			
 			JSONTransferAPIClient client = new JSONTransferAPIClient(username, caFile, certFile, keyFile);        
-			org.globusonline.transfer.Example e = new Example(client);
-
+			org.globusonline.transfer.Example GOClient = new Example(client);
 
 			//Activate source endpoint
-			logger.info("Activating Source Endpoint");
-			if(sourceUsername == null || sourceUsername == ""){
-				logger.info("Source EP username and password is null. Attempting Autoactivations without username/passwd.");
-				if (!e.autoActivate(sourceEP)) {
-					logger.error("Unable to auto activate Source GO endpoint");                               
-					return Status.FAIL;
-				}				
-			}else{
-				if(!e.runPasswordActivation(sourceEP, sourceUsername, sourcePassword)){
-					logger.error("Unable to activate Source GO endpoint");                               
-					return Status.FAIL;
-					
-				}
+			
+			Status st = this.activateEP(sourceUsername, sourcePassword, sourceEP); 
+			if(st.equals(Status.FAIL)){
+				logger.info("Source EP Activation failed..");
+				return Status.FAIL;
 			}
+				
 			
 			//Activate destination endpoint
-			logger.info("Activating Remote Destination Endpoint");
-			if(destinationUsername == null || destinationUsername == ""){
-				logger.info("Destination EP username and password is null. Attempting Autoactivations without username/passwd.");
-				if (!e.autoActivate(destinationEP)) {
-					logger.error("Unable to auto activate Destination GO endpoint");                               
-					return Status.FAIL;
-				}				
-			}else{
-				if(!e.runPasswordActivation(destinationEP, destinationUsername, destinationPassword)){
-					logger.error("Unable to activate Destination GO endpoint");                               
-					return Status.FAIL;
-					
-				}
-			}
+			if(this.activateEP(destinationUsername, destinationPassword, destinationEP).equals(Status.FAIL))
+				return Status.FAIL;
 			
 			logger.info("GO Endpoints Activation was successfull..");
 			
 			
-			//Check if the OS is Windows and translate the Path to GO Compliant 
 			
-			String os = System.getProperty("os.name").toLowerCase();
-			String sPath = file.getAbsolutePath();
-	
-			if(os.indexOf("win")>= 0){
-				
-				//Preparing the source path by removing : on Windows. 
-				String[] sPathSplit = sPath.split(":");
-				sPath = "/"+ sPathSplit[0].toLowerCase() + sPathSplit[1].replace("\\","/");
-				
-				//Check if this source path is accessible on GO, if not assume it is cygdrive
-				// version of the GC and append /cygdrive to path.
-				// The rest of the code in this if-loop should be deleted once GC bug is fixed.
-				
-				Map<String, String> pathMap = new HashMap();				
-				String[] parentDirSplit = file.getAbsoluteFile().getParent().split(":");
-				String parentDir = "/" + parentDirSplit[0].toLowerCase() + parentDirSplit[1].replace("\\", "/");
-				pathMap.put("path", parentDir);								
-				JSONTransferAPIClient.Result listing = client.requestDirListing("GET", "/endpoint/" 
-						+ (sourceEP.contains("#") ? sourceEP.split("#")[1] : sourceEP)+ "/ls", pathMap);
-				
-				
-				if(listing.statusCode == 400){
-					logger.info("It might be an older version of GC, Trying cygdrive based configuration..");
-					sPath = "/cygdrive" + sPath;
-				}
-				
-			}
-			logger.info("File to be transferred: " + sPath);
-			logger.info("Canonical Path: " + file.getCanonicalPath());
-			logger.info("Absolute Path: " + file.getAbsolutePath());
-			logger.info("Get Path: " + file.getPath());			
-			
-
-			JSONTransferAPIClient.Result r = client.getResult("/transfer/submission_id");
-			String submissionId = r.document.getString("value");
+			JSONTransferAPIClient.Result result = client.getResult("/transfer/submission_id");
+			String submissionId = result.document.getString("value");
 
 			JSONObject transfer = new JSONObject();
 			transfer.put("DATA_TYPE", "transfer");
 			transfer.put("submission_id", submissionId);
 
-			JSONObject item = new JSONObject();
-			item.put("DATA_TYPE", "transfer_item");
-			item.put("source_endpoint", sourceEP);
-			item.put("source_path", sPath);
-			item.put("destination_endpoint", destinationEP);
-			item.put("destination_path", destinationRoot + file.getName());
-			transfer.append("DATA", item);
+			//Check if the OS is Windows and translate the Path to GO Compliant 			
+			String os = System.getProperty("os.name").toLowerCase();
+			
+			
+			// Iterate through the files and create a JSON object to be sent to the GO REST API.
+			
+			Iterator<File> iterator = files.iterator();
+			while(iterator.hasNext()){
+				
+				File file = iterator.next();
+				String sPath = file.getAbsolutePath();
+				if(os.indexOf("win")>= 0){
+					
+					//Preparing the source path by removing : on Windows. 
+					String[] sPathSplit = sPath.split(":");
+					sPath = "/"+ sPathSplit[0].toLowerCase() + sPathSplit[1].replace("\\","/");
+					
+					//Check if this source path is accessible on GO, if not assume it is cygdrive
+					// version of the GC and append /cygdrive to path.
+					// The rest of the code in this if-loop should be deleted once GC bug is fixed.
+					
+					Map<String, String> pathMap = new HashMap();				
+					String[] parentDirSplit = file.getAbsoluteFile().getParent().split(":");
+					String parentDir = "/" + parentDirSplit[0].toLowerCase() + parentDirSplit[1].replace("\\", "/");
+					pathMap.put("path", parentDir);								
+					JSONTransferAPIClient.Result listing = client.requestDirListing("GET", "/endpoint/" 
+							+ (sourceEP.contains("#") ? sourceEP.split("#")[1] : sourceEP)+ "/ls", pathMap);
+					
+					
+					if(listing.statusCode == 400){
+						logger.info("It might be an older version of GC, Trying cygdrive based configuration..");
+						sPath = "/cygdrive" + sPath;
+					}
+					
+				}
 
-			r = client.postResult("/transfer", transfer, null);
+				//logger.info("File to be transferred: " + sPath);
+				JSONObject item = new JSONObject();
+				item.put("DATA_TYPE", "transfer_item");
+				item.put("source_endpoint", sourceEP);
+				item.put("source_path", sPath);
+				item.put("destination_endpoint", destinationEP);
+				item.put("destination_path", destinationRoot + file.getName());
 
-			String taskId = r.document.getString("task_id");
+				transfer.append("DATA", item);
+			
+			}
+
+			
+			result = client.postResult("/transfer", transfer, null);
+			String taskId = result.document.getString("task_id");
 			
 			logger.info("Initiating Globus Online Transfer..");
 			logger.info("Waiting " + (transferWaitTime/60) + " minutes for the Globus Transfer to complete");
-			if (!e.waitForTask(taskId, transferWaitTime)) {
+			if (!GOClient.waitForTask(taskId, transferWaitTime)) {
 				logger.info("Transfer not complete after " + (transferWaitTime/60) + " minutes, exiting!!");
 				return Status.FAIL;
 			}
@@ -223,6 +278,7 @@ public class GlobusExportService extends AbstractExportService{
 
 	}
 	
+	//Exporter thread that actually gets launched and that handles the transfers.
 	
 	class Exporter extends Thread {
 		public Exporter() {
@@ -235,39 +291,46 @@ public class GlobusExportService extends AbstractExportService{
 			while (!stop && !interrupted()) {
 				try {
 					if ((getQueueSize()>0) && connect().equals(Status.OK)) {
-						while (!stop && ((file = getNextFile()) != null)) {
-							Status result = export(file);
-							if (result.equals(Status.FAIL)) {
-								//Something is wrong with the file.
-								//Log a warning and quarantine the file.
-								logger.warn(name+": Unable to export "+file);
-								if (quarantine != null) quarantine.insert(file);
-								else file.delete();
+						
+						logger.info("Total files in Queue: " + getQueueSize());
+						
+						List<File> files = new ArrayList<File>();
+						
+						
+						while (!stop && ((files.size() < filesPerTransfer) && (file = getNextFile()) != null)) {
+							files.add(file);
+						}
+						Status result = export(files);
+						if (result.equals(Status.FAIL)) {
+							//Something is wrong with the file.
+							//Log a warning and quarantine the file.
+							logger.warn(name+": Unable to export "+file);
+							if (quarantine != null) quarantine.insert(file);
+							else file.delete();
+						}
+						else if (result.equals(Status.RETRY)) {
+							//Something is wrong, but probably not with the file.
+							//Note that the file has been removed from the queue,
+							//so it is necessary to requeue it. This has the
+							//effect of moving it to the end of the queue.
+							getQueueManager().enqueue(file);
+							//Note that enqueuing a file does not delete it
+							//from the source location, so we must delete it now.
+							file.delete();
+							logger.debug("Status.RETRY received: successCount = "+successCount+"; retryCount = "+retryCount);
+							successCount = 0;
+							//Only break if we have had a string of failures
+							//in a row; otherwise, move on to the next file.
+							if (retryCount++ > 5) break;
+						}
+						else {
+							if (throttle > 0) {
+								try { Thread.sleep(throttle); }
+								catch (Exception ignore) { }
 							}
-							else if (result.equals(Status.RETRY)) {
-								//Something is wrong, but probably not with the file.
-								//Note that the file has been removed from the queue,
-								//so it is necessary to requeue it. This has the
-								//effect of moving it to the end of the queue.
-								getQueueManager().enqueue(file);
-								//Note that enqueuing a file does not delete it
-								//from the source location, so we must delete it now.
-								file.delete();
-								logger.debug("Status.RETRY received: successCount = "+successCount+"; retryCount = "+retryCount);
-								successCount = 0;
-								//Only break if we have had a string of failures
-								//in a row; otherwise, move on to the next file.
-								if (retryCount++ > 5) break;
-							}
-							else {
-								if (throttle > 0) {
-									try { Thread.sleep(throttle); }
-									catch (Exception ignore) { }
-								}
-								release(file);
-								successCount++;
-								retryCount = 0;
-							}
+							release(file);
+							successCount++;
+							retryCount = 0;
 						}
 						disconnect();
 					}

@@ -12,5 +12,6 @@
 			sourceEP="sulakhe#my_laptop"
 			destinationEP="sulakhe#DobynsLabData"
 			transferWaitTime="60"
-			maxPoolSize="20"
+			filesPerTransfer="5"
+			numberOfThreads="2"
 			quarantine="test/quarantines/client/globus-export" />
