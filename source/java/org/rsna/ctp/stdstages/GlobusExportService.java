@@ -306,14 +306,18 @@ public class GlobusExportService extends AbstractExportService{
 							else file.delete();
 						}
 						else if (result.equals(Status.RETRY)) {
-							//Something is wrong, but probably not with the file.
-							//Note that the file has been removed from the queue,
-							//so it is necessary to requeue it. This has the
-							//effect of moving it to the end of the queue.
-							getQueueManager().enqueue(file);
-							//Note that enqueuing a file does not delete it
-							//from the source location, so we must delete it now.
-							file.delete();
+							
+							for(int i=0; i<files.size(); i++){
+								file = files.get(i);
+								//Something is wrong, but probably not with the file.
+								//Note that the file has been removed from the queue,
+								//so it is necessary to requeue it. This has the
+								//effect of moving it to the end of the queue.
+								getQueueManager().enqueue(file);
+								//Note that enqueuing a file does not delete it
+								//from the source location, so we must delete it now.
+								file.delete();
+							}
 							logger.debug("Status.RETRY received: successCount = "+successCount+"; retryCount = "+retryCount);
 							successCount = 0;
 							//Only break if we have had a string of failures
@@ -325,8 +329,11 @@ public class GlobusExportService extends AbstractExportService{
 								try { Thread.sleep(throttle); }
 								catch (Exception ignore) { }
 							}
-							release(file);
-							successCount++;
+							for(int i=0; i<files.size(); i++){
+								file = files.get(i);							
+								release(file);
+								successCount++;
+							}
 							retryCount = 0;
 						}
 						disconnect();
