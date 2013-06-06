@@ -59,6 +59,8 @@ public class GlobusExportService extends AbstractExportService{
 
 	int interval = defaultInterval;
 	
+	static String windowsGCVersion = null;
+	
 
 	public GlobusExportService(Element element) throws Exception {
 		super(element);
@@ -82,7 +84,7 @@ public class GlobusExportService extends AbstractExportService{
 		
 		if(!element.getAttribute("transferWaitTime").isEmpty())
 		{
-			transferWaitTime = Integer.parseInt(element.getAttribute("transferWaitTime")) * 60;
+			transferWaitTime = new Double(Double.parseDouble(element.getAttribute("transferWaitTime")) * 60).intValue();
 		}
 		if(!element.getAttribute("numberOfThreads").isEmpty())
 		{
@@ -171,6 +173,41 @@ public class GlobusExportService extends AbstractExportService{
 	}
 	
 	
+	// This may not be needed once the Globus Connect problem on Windows is fixed!! 
+	private String checkIfOldWindowsGC(File file){ //return "new" or "old"
+		
+		if (windowsGCVersion != null){			
+			return windowsGCVersion;
+		}else{
+		
+			try{
+				JSONTransferAPIClient client = new JSONTransferAPIClient(username, caFile, certFile, keyFile);        
+				Map<String, String> pathMap = new HashMap();				
+				String[] parentDirSplit = file.getAbsoluteFile().getParent().split(":");
+				String parentDir = "/" + parentDirSplit[0].toLowerCase() + parentDirSplit[1].replace("\\", "/");
+				pathMap.put("path", parentDir);								
+				JSONTransferAPIClient.Result listing = client.requestDirListing("GET", "/endpoint/" 
+						+ (sourceEP.contains("#") ? sourceEP.split("#")[1] : sourceEP)+ "/ls", pathMap);
+				
+				if(listing.statusCode == 400){
+					logger.info("It might be an older version of GC, Trying cygdrive based configuration..");
+					windowsGCVersion = "old";
+				}else{
+					logger.info("It seems to be a newer version of GC..");
+					windowsGCVersion = "new";
+				}
+				
+			} catch (Exception e) {
+				logger.error("Got an exception..\n");
+				logger.error(e.getMessage());
+				logger.error(e.getStackTrace().toString());
+			}
+		}
+		
+		return windowsGCVersion;
+		
+	}
+	
 	public Status export(List<File> files) {
 
 		//logger.info("1. Inside " + name +"export methods..");
@@ -204,11 +241,12 @@ public class GlobusExportService extends AbstractExportService{
 			transfer.put("submission_id", submissionId);
 
 			//Check if the OS is Windows and translate the Path to GO Compliant 			
-			String os = System.getProperty("os.name").toLowerCase();
+			String os = System.getProperty("os.name").toLowerCase();			
+			//Uncomment the following line if you want to check the version of Globus Connect on Windows before every transfer!! 
+			//windowsGCVersion = null;
 			
 			
-			// Iterate through the files and create a JSON object to be sent to the GO REST API.
-			
+			// Iterate through the files and create a JSON object to be sent to the GO REST API.			
 			Iterator<File> iterator = files.iterator();
 			while(iterator.hasNext()){
 				
@@ -223,17 +261,8 @@ public class GlobusExportService extends AbstractExportService{
 					//Check if this source path is accessible on GO, if not assume it is cygdrive
 					// version of the GC and append /cygdrive to path.
 					// The rest of the code in this if-loop should be deleted once GC bug is fixed.
-					
-					Map<String, String> pathMap = new HashMap();				
-					String[] parentDirSplit = file.getAbsoluteFile().getParent().split(":");
-					String parentDir = "/" + parentDirSplit[0].toLowerCase() + parentDirSplit[1].replace("\\", "/");
-					pathMap.put("path", parentDir);								
-					JSONTransferAPIClient.Result listing = client.requestDirListing("GET", "/endpoint/" 
-							+ (sourceEP.contains("#") ? sourceEP.split("#")[1] : sourceEP)+ "/ls", pathMap);
-					
-					
-					if(listing.statusCode == 400){
-						logger.info("It might be an older version of GC, Trying cygdrive based configuration..");
+					if(this.checkIfOldWindowsGC(file).equals("old")){
+						//logger.info("It might be an older version of GC, Trying cygdrive based configuration..");
 						sPath = "/cygdrive" + sPath;
 					}
 					
@@ -256,9 +285,17 @@ public class GlobusExportService extends AbstractExportService{
 			String taskId = result.document.getString("task_id");
 			
 			logger.info("Initiating Globus Online Transfer..");
-			logger.info("Waiting " + (transferWaitTime/60) + " minutes for the Globus Transfer to complete");
+			if (transferWaitTime < 60) {
+				logger.info("Waiting " + transferWaitTime + " seconds for the Globus Transfer to complete");
+			} else {
+				logger.info("Waiting " + (transferWaitTime/60) + " minutes for the Globus Transfer to complete");
+			}
 			if (!GOClient.waitForTask(taskId, transferWaitTime)) {
-				logger.info("Transfer not complete after " + (transferWaitTime/60) + " minutes, exiting!!");
+				if (transferWaitTime < 60) {
+					logger.info("Transfer not complete after " + transferWaitTime + " seconds, exiting!!");
+				} else {
+					logger.info("Transfer not complete after " + (transferWaitTime/60) + " minutes, exiting!!");
+				}
 				return Status.FAIL;
 			}
 
