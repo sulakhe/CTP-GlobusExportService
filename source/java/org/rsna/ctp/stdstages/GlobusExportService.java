@@ -3,20 +3,27 @@ package org.rsna.ctp.stdstages;
 /*
  * @author Dina Sulakhe <sulakhe@mcs.anl.gov>
  * 10/02/2012
+ * Modified by Yaorong Ge 6/10/2014
  */
-import java.io.File;
-import java.io.IOException;
+//import java.io.File;
+//import java.io.IOException;
+import java.io.*;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.nio.file.*;
+import java.nio.charset.Charset;
 
 import org.apache.log4j.Logger;
 import org.globusonline.transfer.APIError;
 import org.globusonline.transfer.Example;
 import org.globusonline.transfer.JSONTransferAPIClient;
+import org.globusonline.transfer.Authenticator;
+import org.globusonline.transfer.GoauthAuthenticator;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.rsna.ctp.pipeline.AbstractExportService;
@@ -27,6 +34,9 @@ public class GlobusExportService extends AbstractExportService{
 
 	static final Logger logger = Logger.getLogger(GlobusExportService.class);
 
+	JSONTransferAPIClient client;
+	org.globusonline.transfer.Example GOClient;
+
 	String username = null;
 	String password = null;
 	boolean authenticate = false;
@@ -34,6 +44,15 @@ public class GlobusExportService extends AbstractExportService{
 	String keyFile = null;
 	String caFile = null;
 	String urlString = null;
+
+	String goauth = "";
+	String goauthTokenFile = "";
+	String goauthToken = "";
+	String myproxySource = "";
+	String myproxyDestination = "";
+	String myproxySourceServer = "";
+	String myproxyDestinationServer = "";
+
 	String sourceEP = null;
 	String sourceUsername = null;
 	String sourcePassword = null;	
@@ -73,6 +92,14 @@ public class GlobusExportService extends AbstractExportService{
 		certFile = element.getAttribute("certfile");
 		keyFile = element.getAttribute("keyfile");
 		caFile = element.getAttribute("cafile");
+
+		goauth = element.getAttribute("goauth");
+		goauthTokenFile = element.getAttribute("goauth-token");
+		myproxySource = element.getAttribute("myproxy-source");
+		myproxyDestination = element.getAttribute("myproxy-destination");
+		myproxySourceServer = element.getAttribute("myproxy-source-server");
+		myproxyDestinationServer = element.getAttribute("myproxy-destination-server");
+
 		sourceEP = element.getAttribute("sourceEP");
 		sourceUsername = element.getAttribute("sourceUsername");
 		sourcePassword = element.getAttribute("sourcePassword");		
@@ -90,9 +117,22 @@ public class GlobusExportService extends AbstractExportService{
 		{
 			numberOfThreads = Integer.parseInt(element.getAttribute("numberOfThreads"));
 		}
-		
 
-		/**/logger.info(name + " started");
+		if (goauth.equals("yes")){ // yge: read in the token
+			try {
+	 			byte[] encoded = Files.readAllBytes(Paths.get(goauthTokenFile));
+				goauthToken = new String(encoded, Charset.defaultCharset());
+				goauthToken = goauthToken.substring(0,goauthToken.length()-1);
+				logger.info(goauthToken + "\n");
+			} catch(FileNotFoundException e){
+				logger.error(e.getStackTrace().toString());
+			} catch(IOException e){
+				logger.error(e.getStackTrace().toString());
+			}
+		}
+
+		/*logger.info(name + " started");
+		*/
 
 	}
 	
@@ -121,8 +161,8 @@ public class GlobusExportService extends AbstractExportService{
 		
 		logger.info("Activating Endpoint: " + endpoint);
 		try {
-			JSONTransferAPIClient client = new JSONTransferAPIClient(username, caFile, certFile, keyFile);        
-			org.globusonline.transfer.Example GOClient = new Example(client);
+// yge			JSONTransferAPIClient client = new JSONTransferAPIClient(username, caFile, certFile, keyFile);        
+// done before the call			org.globusonline.transfer.Example GOClient = new Example(client);
 
 			if(EpUsername == null || EpUsername == ""){
 				logger.info("EP username and password is null. Attempting Autoactivations without username/passwd.");
@@ -166,6 +206,82 @@ public class GlobusExportService extends AbstractExportService{
 		}				
 
 	}
+
+
+    	private Status myproxyActivateEP(String myproxyUsername,
+                                         String myproxyPassphrase,
+					 String endpointName,
+                                         String myproxyHostname)
+	{
+
+		logger.info("Activating Endpoint using myproxy: " + endpointName);
+
+		try {
+        		String url = client.endpointPath(endpointName) + "/activation_requirements";
+        		JSONTransferAPIClient.Result r = client.getResult(url);
+
+        		// Go through requirements and find the myproxy type, then fill
+        		// in with the values from the function^Wmethod parameters.
+        		JSONArray reqsArray = r.document.getJSONArray("DATA");
+        		for (int i=0; i < reqsArray.length(); i++) {
+            			JSONObject reqObject = reqsArray.getJSONObject(i);
+            			if (reqObject.getString("type").equals("myproxy")) {
+                			String name = reqObject.getString("name");
+                			if (name.equals("hostname")) {
+                    				reqObject.put("value", myproxyHostname);
+                			} else if (name.equals("username")) {
+                    				reqObject.put("value", myproxyUsername);
+                			} else if (name.equals("passphrase")) {
+                    				reqObject.put("value", myproxyPassphrase);
+                			}
+                		// optional arguments are 'server_dn', required if the hostname
+                		// does not match the DN in the server's certificate, and
+                		// 'lifetime_in_hours', to ask for a specific lifetime rather
+                		// than accepting the server default.
+                		// See also:
+                		//  https://transfer.api.globusonline.org/v0.10/document_type/activation_requirements/example?format=json
+            			}
+        		}
+
+        		url = client.endpointPath(endpointName) + "/activate";
+        		r = client.postResult(url, r.document);
+
+        		// return r; yge: should check on r to determine what to return
+			if (r.statusCode >= 400) {
+				logger.error("Returned statusCode >=400 : " + r.statusCode + "\n");
+				return Status.FAIL;
+			}
+			return Status.OK;
+
+		} catch (IOException e) {
+			logger.error("Got an IO exception..\n");
+			logger.error(e.getMessage());
+			logger.error(e.getStackTrace().toString());
+
+			e.printStackTrace();
+			return Status.FAIL;
+		} catch (JSONException e) {
+			logger.error("Got an JSON exception..\n");
+			logger.error(e.getMessage());
+			logger.error(e.getStackTrace().toString());
+			e.printStackTrace();
+			return Status.FAIL;
+		} catch (GeneralSecurityException e) {
+			logger.error("Got an Security exception..\n");
+			logger.error(e.getMessage());
+			logger.error(e.getStackTrace().toString());
+			e.printStackTrace();
+			return Status.FAIL;
+		} catch (APIError e) {
+			logger.error("Got an APIError exception..\n");
+			logger.error(e.getMessage());
+			logger.error(e.getStackTrace().toString());
+			e.printStackTrace();
+			return Status.FAIL;
+		}			
+
+    	}
+
 	
 	@Override
 	public Status export(File file) {
@@ -186,8 +302,9 @@ public class GlobusExportService extends AbstractExportService{
 				String[] parentDirSplit = file.getAbsoluteFile().getParent().split(":");
 				String parentDir = "/" + parentDirSplit[0].toLowerCase() + parentDirSplit[1].replace("\\", "/");
 				pathMap.put("path", parentDir);								
-				JSONTransferAPIClient.Result listing = client.requestDirListing("GET", "/endpoint/" 
-						+ (sourceEP.contains("#") ? sourceEP.split("#")[1] : sourceEP)+ "/ls", pathMap);
+//				JSONTransferAPIClient.Result listing = client.requestDirListing("GET", "/endpoint/" 
+				JSONTransferAPIClient.Result listing = client.requestResult("GET", "/endpoint/" 
+						+ (sourceEP.contains("#") ? sourceEP.split("#")[1] : sourceEP)+ "/ls", null, pathMap);
 				
 				if(listing.statusCode == 400){
 					logger.info("It might be an older version of GC, Trying cygdrive based configuration..");
@@ -213,12 +330,32 @@ public class GlobusExportService extends AbstractExportService{
 		//logger.info("1. Inside " + name +"export methods..");
 		try {
 			
-			JSONTransferAPIClient client = new JSONTransferAPIClient(username, caFile, certFile, keyFile);        
-			org.globusonline.transfer.Example GOClient = new Example(client);
+			if (goauth.equals("no")) {
+// yge				JSONTransferAPIClient client = new JSONTransferAPIClient(username, caFile, certFile, keyFile);        
+				client = new JSONTransferAPIClient(username, caFile, certFile, keyFile);        
+			}
+			else {
+				String baseUrl = null;
+				Authenticator authenticator = new GoauthAuthenticator(goauthToken);
+// yge         			JSONTransferAPIClient client = new JSONTransferAPIClient(username, null, baseUrl);
+            			client = new JSONTransferAPIClient(username, null, baseUrl);
+	    			client.setAuthenticator(authenticator);
+	    			logger.info("base url: " + client.getBaseUrl());
+// yge            			client.endpointDeactivate(sourceEP);
+			}
+
+// yge			org.globusonline.transfer.Example GOClient = new Example(client);
+			GOClient = new Example(client);
 
 			//Activate source endpoint
 			
-			Status st = this.activateEP(sourceUsername, sourcePassword, sourceEP); 
+			Status st;
+			if (myproxySource.equals("no")) {
+				st = this.activateEP(sourceUsername, sourcePassword, sourceEP); 
+			}
+			else {
+				st = this.myproxyActivateEP(sourceUsername, sourcePassword, sourceEP, myproxySourceServer); 
+			}
 			if(st.equals(Status.FAIL)){
 				logger.info("Source EP Activation failed..");
 				return Status.FAIL;
@@ -226,8 +363,19 @@ public class GlobusExportService extends AbstractExportService{
 				
 			
 			//Activate destination endpoint
-			if(this.activateEP(destinationUsername, destinationPassword, destinationEP).equals(Status.FAIL))
+			
+			if (myproxyDestination.equals("no")) {
+				st = this.activateEP(destinationUsername, destinationPassword, destinationEP);
+			}
+			else {
+				st = this.myproxyActivateEP(destinationUsername, destinationPassword, destinationEP, 
+						myproxyDestinationServer);
+
+			}
+			if (st.equals(Status.FAIL)) {
+				logger.info("Destination EP activation failed...");
 				return Status.FAIL;
+			}
 			
 			logger.info("GO Endpoints Activation was successfull..");
 			
@@ -268,7 +416,7 @@ public class GlobusExportService extends AbstractExportService{
 					
 				}
 
-				//logger.info("File to be transferred: " + sPath);
+				logger.info("File to be transferred: " + sPath);
 				JSONObject item = new JSONObject();
 				item.put("DATA_TYPE", "transfer_item");
 				item.put("source_endpoint", sourceEP);
@@ -276,6 +424,7 @@ public class GlobusExportService extends AbstractExportService{
 				item.put("destination_endpoint", destinationEP);
 				item.put("destination_path", destinationRoot + file.getName());
 
+				logger.info("File to be transferred to at destination: " + destinationRoot + file.getName());
 				transfer.append("DATA", item);
 			
 			}

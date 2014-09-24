@@ -11,13 +11,34 @@
 			This is similar to providing a URL in HttpExportService - the URL pointing to a Server ImportService. With GlobusOnline, we don't need a Server Import Service and will instead use a GCMU pointing to this "destinationRoot"
 			</comment>
 		</attr>
+		<attr name=“goauth” required=“yes” default="no" options="yes|no">
+			<comment>Use goauth for authentication (yes/no)</comment>
+		</attr>
+		<attr name=“goauth-token” required="no" default="" editable="yes">
+			<comment>This is the file for access_token from goauth. This is needed when goauth is yes.
+			</comment>
+		</attr>
+		<attr name=“myproxy-source” required=“yes” default="no" options="yes|no">
+			<comment>Use myproxy for endpoint activation (yes/no)</comment>
+		</attr>
+		<attr name=“myproxy-destination” required=“yes” default="no" options="yes|no">
+			<comment>Use myproxy for endpoint activation (yes/no)</comment>
+		</attr>
+		<attr name=“myproxy-source-server” required="no" default="" editable="yes">
+			<comment>This the server address for myproxy at the source Endpoint. This is needed when myproxy-source is yes.
+			</comment>
+		</attr>
+		<attr name=“myproxy-destination-server” required="no" default="" editable="yes">
+			<comment>This the server address for myproxy at the destination Endpoint. This is needed when myproxy-destination is yes.
+			</comment>
+		</attr>
 		<attr name="sourceUsername" required="no" default="" editable="yes">
-			<comment>This the username to be used to activate the destination Endpoint. 
+			<comment>This the username to be used to activate the source Endpoint. 
 			If empty, then it is assumed to be a public endpoint and auto-activation without username/passwd will be tried.
 			</comment>
 		</attr>
 		<attr name="sourcePassword" required="no" default="" editable="no">
-			<comment>This the password to be used to activate the destination Endpoint.
+			<comment>This the password to be used to activate the source Endpoint.
 			If empty, then it is assumed to be a public endpoint and auto-activation without username/passwd will be tried.
 			</comment>
 		</attr>
@@ -31,13 +52,13 @@
 			If empty, then it is assumed to be a public endpoint and auto-activation without username/passwd will be tried.
 			</comment>
 		</attr>
-		<attr name="certfile" required="yes" default="~/.globusonline/lta/ltacert.pem" editable="yes">
+		<attr name="certfile" required=“no” default="~/.globusonline/lta/ltacert.pem" editable="yes">
 			<comment>This is the user's Cert file that is typically installed with Globus Connect. This x509 cert file should be added to "Manager Identities" on www.globusonline.org</comment>
 		</attr>
-		<attr name="keyfile" required="yes" default="~/.globusonline/lta/ltakey.pem" editable="yes">
+		<attr name="keyfile" required=“no” default="~/.globusonline/lta/ltakey.pem" editable="yes">
 			<comment>Path to the keyfile for the User Cert</comment>
 		</attr>
-		<attr name="cafile" required="yes" default="" editable="yes">
+		<attr name="cafile" required=“no” default="" editable="yes">
 			<comment>Path to the cacert files. Two valid cacerts are provided with GlobusExportService under cacerts directory</comment>
 		</attr>
 		<attr name="transferWaitTime" required="no" default="" editable="yes">
